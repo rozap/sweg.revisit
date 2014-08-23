@@ -30,7 +30,7 @@ def service():
         with open(output, 'r') as f:
             data = content_type + base64.b64encode(f.read())
 
-        # shutil.rmtree(folder)
+        shutil.rmtree(folder)
     except Exception, e:
         logging.exception("Failed to convert image")
         data = content['content']['data']
