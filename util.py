@@ -1,9 +1,15 @@
 import cStringIO
 from PIL import Image, ImageSequence
 import base64
-from os import listdir
+import os
+from os import makedirs, listdir
 from os.path import isfile, join
-from random import choice
+from random import choice, randint
+from PIL import Image, ImageSequence
+from uuid import uuid4
+from subprocess import call
+import base64
+from datetime import datetime
 
 def b64_to_image(blob):
     decoded = base64.b64decode(blob)
@@ -26,3 +32,64 @@ def random_gif():
     duration = im.info['duration']
     frames = [frame.copy() for frame in ImageSequence.Iterator(im)]    
     return frames, duration, im
+
+
+
+
+def rand_size(img):
+    factor = .5
+    return img.size[0] * factor, img.size[1] * factor
+
+def rand_place(img, frame):
+    frame_w, frame_h = frame.size
+    img_w, img_h = img.size
+    return randint(0, max(0, img_w - frame_w)), randint(0, max(0, img_h - frame_h))
+
+
+def usec():
+    return datetime.now().microsecond
+
+
+###
+#   Is there any less efficient way to do all this? probably not. 
+#
+def overlay_gif(img):
+    t_start = usec()
+
+    frame_size = rand_size(img)
+    frames, duration, og_gif = random_gif()
+
+    names = []
+    folder = 'temp/%s/' % str(uuid4())
+    makedirs(folder)
+    place = None
+
+    print "Time to random gif: %s" % (usec() - t_start)
+
+    for i, frame in enumerate(frames):
+        if not place:
+            place = rand_place(img, frame)
+
+        width, height = frame.size
+        frame_box = (place[0], place[1], place[0] + width, place[1] + height)
+
+        frame = frame.convert("RGBA")
+        base = img.copy()        
+        base.paste(frame, frame_box, mask = frame)
+        name = folder + ('%s.jpg' % i)
+        base.save(name) 
+        names.append(name)
+
+
+    print "Time to overlay imgs: %s" % (usec() - t_start)
+
+    output = folder + 'animation.gif'
+    call(['convert', '-delay', '8'] + names + ['-coalesce', '-layers', 'OptimizeTransparency', output])
+    
+    print "Time to convert: %s" % (usec() - t_start)
+
+    megabytes = os.stat(output).st_size / 1000000.0
+    if megabytes > 2.0:
+        abort(400)
+
+    return output, folder

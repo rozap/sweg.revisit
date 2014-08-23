@@ -1,21 +1,13 @@
 from flask import Flask, request, Response, abort
+from logging.handlers import SysLogHandler
+import logging
 import json
 import util
-from PIL import Image, ImageSequence
 from uuid import uuid4
-from os import makedirs
-from subprocess import call
 import base64
-import os
+import shutil
 
 app = Flask(__name__)
-
-
-accept_types = ['image/jpeg', 'image/png', 'image/gif']
-
-@app.errorhandler(400)
-def exception_400(error):
-    return 'content.type must be one of ' + ' '.join(accept_types), 400
 
 
 @app.route("/", methods = ['GET'])
@@ -26,44 +18,27 @@ def index():
 @app.route("/service", methods = ['POST'])
 def service():
     content = request.get_json()
-    if not content['content']['type'] in accept_types:
-        abort(400)
 
-    frames, duration, og_gif = util.random_gif()
+    try: 
+        img = util.b64_to_image(content['content']['data'])
+        img = img.convert("RGBA")
 
-    img = util.b64_to_image(content['content']['data'])
-    img = img.convert("RGBA")
 
-    ###
-    #   Is there any less efficient way to do all this? probably not. 
-    #
+        output, folder = util.overlay_gif(img)
 
-    names = []
-    folder = 'temp/%s/' % str(uuid4())
-    makedirs(folder)
-    for i, frame in enumerate(frames):
-        width, height = frame.size
-        frame = frame.convert("RGBA")
-        base = img.copy()
-        base.paste(frame, (0, 0, width, height), mask = frame)
-        name = folder + ('%s.jpg' % i)
-        base.save(name) 
-        names.append(name)
+        with open(output, 'r') as f:
+            data = base64.b64encode(f.read())
 
-    output = folder + 'animation.gif'
-    call(['convert', '-delay', '8'] + names + ['-coalesce', '-layers', 'OptimizeTransparency', output])
-    
-    megabytes = os.stat(output).st_size / 1000000.0
-    if megabytes > 2.0:
-        abort(400)
+        shutil.rmtree(folder)
+    except Exception, e:
+        logging.exception("Failed to convert image")
+        data = content['content']['data']
 
-    with open(output, 'r') as f:
-        content = base64.b64encode(f.read())
+
 
     return json.dumps({ 
         "content": {
-          "type": "image/gif",
-          "data" : content
+          "data" : data
         },
         "meta": {
           "audio": {
@@ -75,4 +50,7 @@ def service():
 
 
 if __name__ == "__main__":
-    app.run(debug = True)
+    handler = SysLogHandler(address = '/dev/log')
+    handler.setLevel(logging.DEBUG)
+    app.logger.addHandler(handler)
+    app.run(debug = False)
