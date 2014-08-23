@@ -21,7 +21,6 @@ def service():
     content = request.get_json()
 
     try: 
-        print content['content']['data']
         img = util.b64_to_image(content['content']['data'].split(',')[1])
         img = img.convert("RGBA")
 
