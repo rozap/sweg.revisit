@@ -37,9 +37,13 @@ def random_gif():
 
 
 
-def rand_size(img):
-    factor = uniform(.5, 1)
-    return img.size[0] * factor, img.size[1] * factor
+# def rand_size(img, frame):
+#     factor = uniform(.5, 1)
+
+#     img_w, img_h = img.size
+#     frame_w, frame_h = frame.size
+#     (w, h) = (img_w, img_h) if img_w < frame_w and img_h < frame_h else (frame_w, frame_h)
+#     return w * factor, h * factor
 
 def rand_place(img, frame):
     frame_w, frame_h = frame.size
@@ -56,7 +60,7 @@ def usec():
 #
 def overlay_gif(img):
     t_start = usec()
-    img.thumbnail((520, 520),Image.ANTIALIAS)
+    img.thumbnail((420, 420),Image.ANTIALIAS)
 
     frames, duration, og_gif = random_gif()
 
@@ -65,32 +69,36 @@ def overlay_gif(img):
     makedirs(folder)
     place = None
 
-    print "Time to random gif: %s" % (usec() - t_start)
-
+    skip = max(1, int(len(frames) / 14))
     for i, frame in enumerate(frames):
-        if not place or not frame_size:
-            place = rand_place(img, frame)
-            frame_size = rand_size(img)
-        width, height = frame.size
-        frame_box = (place[0], place[1], place[0] + width, place[1] + height)
+        if i % skip == 0:
+            if not place:
+                place = rand_place(img, frame)
+                # frame_size = rand_size(img, frame)
 
-        frame = frame.convert("RGBA")
-        base = img.copy()        
-        base.paste(frame, frame_box, mask = frame)
-        name = folder + ('%s.jpg' % i)
-        base.save(name) 
-        names.append(name)
+            width, height = frame.size
+            frame_box = (place[0], place[1], place[0] + width, place[1] + height)
+
+            frame = frame.convert("RGBA")
+            base = img.copy()        
+            base.paste(frame, frame_box, mask = frame)
+            name = folder + ('%s.jpg' % i)
+            base.save(name) 
+            names.append(name)
+
 
 
     print "Time to overlay imgs: %s" % (usec() - t_start)
     output = folder + 'animation.gif'
     print "output -> " + output
-    call(['convert', '-delay', '8'] + names + [output])
+    print "LEN OF FRAMES %s" % (len(names))
+    call(['convert', '-delay', "8"] + names + [output])
     
     print "Time to convert: %s" % (usec() - t_start)
 
     megabytes = os.stat(output).st_size / 1000000.0
     if megabytes > 2.0:
+        print "Oversized image was %s" % megabytes
         abort(400)
 
     return output, folder

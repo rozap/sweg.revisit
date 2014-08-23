@@ -29,7 +29,7 @@ def post(url, image_loc, output):
     service = '%s/service' % url
     print "POST to %s" % service
     resp = requests.post(service, data = json.dumps(content), headers = headers).json()
-    blob = resp['content']['data']
+    blob = resp['content']['data'].split(',')[1]
     decoded = base64.b64decode(blob)
     file_like = cStringIO.StringIO(decoded)
     with open(output, 'wb') as out:
