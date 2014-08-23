@@ -32,6 +32,7 @@ def service():
     frames, duration, og_gif = util.random_gif()
 
     img = util.b64_to_image(content['content']['data'])
+    img = img.convert("RGBA")
 
     ###
     #   Is there any less efficient way to do all this? probably not. 
@@ -42,15 +43,15 @@ def service():
     makedirs(folder)
     for i, frame in enumerate(frames):
         width, height = frame.size
-        bg = Image.new("RGB", img.size, (255,255,255))
-        bg.paste(frame, (0, 0, width, height))
-        final = Image.blend(bg, img, .4)
+        frame = frame.convert("RGBA")
+        base = img.copy()
+        base.paste(frame, (0, 0, width, height), mask = frame)
         name = folder + ('%s.jpg' % i)
-        final.save(name) 
+        base.save(name) 
         names.append(name)
 
     output = folder + 'animation.gif'
-    call(['convert', '-delay', '1x9'] + names + ['-coalesce', '-layers', 'OptimizeTransparency', output])
+    call(['convert', '-delay', '8'] + names + ['-coalesce', '-layers', 'OptimizeTransparency', output])
     
     megabytes = os.stat(output).st_size / 1000000.0
     if megabytes > 2.0:
