@@ -8,7 +8,7 @@ import base64
 import shutil
 
 app = Flask(__name__)
-content_type = 'data:image/jpeg;base64,'
+content_type = 'data:image/gif;base64,'
 
 
 @app.route("/", methods = ['GET'])
@@ -28,7 +28,7 @@ def service():
         output, folder = util.overlay_gif(img)
 
         with open(output, 'r') as f:
-            data = base64.b64encode(f.read())
+            data = content_type + base64.b64encode(f.read())
 
         # shutil.rmtree(folder)
     except Exception, e:
