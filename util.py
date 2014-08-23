@@ -1,10 +1,11 @@
 import cStringIO
+from flask import Flask, request, Response, abort
 from PIL import Image, ImageSequence
 import base64
 import os
 from os import makedirs, listdir
 from os.path import isfile, join
-from random import choice, randint
+from random import choice, randint, uniform
 from PIL import Image, ImageSequence
 from uuid import uuid4
 from subprocess import call
@@ -37,7 +38,7 @@ def random_gif():
 
 
 def rand_size(img):
-    factor = .5
+    factor = uniform(.5, 1)
     return img.size[0] * factor, img.size[1] * factor
 
 def rand_place(img, frame):
@@ -55,8 +56,8 @@ def usec():
 #
 def overlay_gif(img):
     t_start = usec()
+    img.thumbnail((520, 520),Image.ANTIALIAS)
 
-    frame_size = rand_size(img)
     frames, duration, og_gif = random_gif()
 
     names = []
@@ -67,9 +68,9 @@ def overlay_gif(img):
     print "Time to random gif: %s" % (usec() - t_start)
 
     for i, frame in enumerate(frames):
-        if not place:
+        if not place or not frame_size:
             place = rand_place(img, frame)
-
+            frame_size = rand_size(img)
         width, height = frame.size
         frame_box = (place[0], place[1], place[0] + width, place[1] + height)
 
@@ -82,9 +83,9 @@ def overlay_gif(img):
 
 
     print "Time to overlay imgs: %s" % (usec() - t_start)
-
     output = folder + 'animation.gif'
-    call(['convert', '-delay', '8'] + names + ['-coalesce', '-layers', 'OptimizeTransparency', output])
+    print "output -> " + output
+    call(['convert', '-delay', '8'] + names + [output])
     
     print "Time to convert: %s" % (usec() - t_start)
 

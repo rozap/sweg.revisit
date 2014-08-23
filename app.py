@@ -8,6 +8,7 @@ import base64
 import shutil
 
 app = Flask(__name__)
+content_type = 'data:image/jpeg;base64,'
 
 
 @app.route("/", methods = ['GET'])
@@ -20,16 +21,16 @@ def service():
     content = request.get_json()
 
     try: 
-        img = util.b64_to_image(content['content']['data'])
+        print content['content']['data']
+        img = util.b64_to_image(content['content']['data'].split(',')[1])
         img = img.convert("RGBA")
-
 
         output, folder = util.overlay_gif(img)
 
         with open(output, 'r') as f:
             data = base64.b64encode(f.read())
 
-        shutil.rmtree(folder)
+        # shutil.rmtree(folder)
     except Exception, e:
         logging.exception("Failed to convert image")
         data = content['content']['data']
@@ -53,4 +54,4 @@ if __name__ == "__main__":
     handler = SysLogHandler(address = '/dev/log')
     handler.setLevel(logging.DEBUG)
     app.logger.addHandler(handler)
-    app.run(debug = False)
+    app.run(debug = True)
