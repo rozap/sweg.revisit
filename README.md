@@ -5,7 +5,7 @@ sweg.revisit
 to take an image from revisit.link and gently lay a swag gif upon it. 
 
 
-#### pls how to revisit.link
+#### pls gril how to revisit.link
 read the spec http://revisit.link/spec.html 
 
 ![1v1 me skrub](http://i.imgur.com/QW6ICC1.gif)
