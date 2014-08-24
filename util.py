@@ -36,15 +36,6 @@ def random_gif():
 
 
 
-
-# def rand_size(img, frame):
-#     factor = uniform(.5, 1)
-
-#     img_w, img_h = img.size
-#     frame_w, frame_h = frame.size
-#     (w, h) = (img_w, img_h) if img_w < frame_w and img_h < frame_h else (frame_w, frame_h)
-#     return w * factor, h * factor
-
 def rand_place(img, frame):
     frame_w, frame_h = frame.size
     img_w, img_h = img.size
@@ -69,12 +60,11 @@ def overlay_gif(img):
     makedirs(folder)
     place = None
 
-    skip = max(1, int(len(frames) / 14))
+    skip = max(1, int(len(frames) / 10))
     for i, frame in enumerate(frames):
         if i % skip == 0:
             if not place:
                 place = rand_place(img, frame)
-                # frame_size = rand_size(img, frame)
 
             width, height = frame.size
             frame_box = (place[0], place[1], place[0] + width, place[1] + height)
